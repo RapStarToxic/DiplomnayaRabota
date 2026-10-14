@@ -1,100 +1,92 @@
-import { useState } from 'react'
-import {useRef} from 'react'
-import { Table, Input, Button, Tag, Space, Card, Typography} from 'antd'
-import { BarcodeOutlined, CheckCircleOutlined} from '@ant-design/icons'
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import WarehouseInventory from './Inventarizaciya'
 import './App.css'
-import { useEffect } from 'react'
 import Dashboard from './Dashboard'
 import InventoryManagement from './InventoryManagement'
+import Login from './Login'
 
-const {Title, Text} = Typography
-
-const initialStock = [
-  { id:1, sku: 'PROD-001', name: 'Товар 1', expected: 15, actual: 0},
-  { id:2, sku: 'PROD-002', name: 'Товар 2', expected: 5, actual: 0}
-]
-
-
-export default function WarehouseInventory() {
-  const [items, setItems] = useState(initialStock)
-  const [barcodeInput, setBarcodeInput] = useState('')
-  const barcodeRef = useRef(null)
-
-  useEffect (()=> {
-    barcodeRef.current?.focus()
-  }, [items])
-
-  const handleScan = (e) => {
-    e.preventDefault()
-    if (!barcodeInput.trim()) return;
-
-    const updatedItems = items.map(item =>{
-      if (item.sku === barcodeInput.trim()) {
-        return { ...item, actual: item.actual + 1}
-      }
-      return item
-    })
-
-    const found = items.some(item => item.sku === barcodeInput.trim())
-    if (found) {
-      setItems(updatedItems)
-      message.success(`Отсканированно: ${barcodeInput}`)
-    } else {
-      message.error(`Товар с SKU ${barcodeInput} не числится в этой ячейке.`)
-    }
-
-    setBarcodeInput('')
+function ProtectedRoute({ isAuthenticated, children }) {
+  // Если пользователь не авторизован, принудительно перенаправляем на /login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+}
 
-  const columns = [
-    {title: 'SKU/Штрихкод', dataIndex: 'sku', key: 'sku'},
-    {title: 'Наименование', dataIndex: 'name', key: 'name'},
-    {title: 'Учет (Ожидание)', dataIndex: 'expected', key: 'expected', align: 'center'},
-    {
-      title: 'Факт (Посчитано)',
-      dataIndex: 'actual',
-      key: 'actual',
-      align: 'center',
-      render: (actual, record) => (
-        <strong className='actual' style={{color: actual === record.expected ? '#52c41a' : '#1677ff'}}>{actual}</strong>
-      )
-    },
-    {
-      title: 'Статус',
-      key: 'status',
-      render: (_, record) => {
-        const diff = record.actual - record.expected
-        if(record.actual === 0) return <Tag color="default">Не проверено</Tag>;
-        if(diff === 0) return <Tag color="success">Сходится</Tag>;
-        return <Tag color="error">Расхождение ({diff > 0 ? `+${diff}` : diff})</Tag>;
-      },
-    },
-  ]
+export default function App() {
+  // Состояние авторизации (в реальном проекте здесь будет проверка токена или контекст)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  // Функция для выхода из системы
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
 
   return (
     <>
-      <Card className='card'>
-        <Space direction="vertical" size="large" style={{width: '100%'}}>
+      <Router>
+      <div className="app-container">
+        
+        {/* Отображаем навигационную панель только если пользователь вошел в систему */}
+        {isAuthenticated && (
+          <nav className="navigation-panel">
+            <Link to="/dashboard">Главная панель</Link>
+            <Link to="/inventory">Управление запасами</Link>
+            <Link to="/warehouse">Инвентаризация склада</Link>
+            <button onClick={handleLogout} className="logout-btn">Выйти</button>
+          </nav>
+        )}
 
-          <div>
-            <Title level={3}>Инвентаризация ячейки: <Text type="danger">A-101</Text></Title>
-            <Text type="secondary">Зона: Основной склад (Сухая зона)</Text>
-          </div>
+        {/* Контент страниц */}
+        <main className="content-area">
+          <Routes>
+            {/* Страница логина */}
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />
+              } 
+            />
 
-          <form onSubmit={handleScan}>
-            <Input ref={barcodeRef} size="large" placeholder="Сканируйте штрихкод или введите SKU (например, PROD-001)" prefix={<BarcodeOutlined></BarcodeOutlined>} value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)} className="input">
-            </Input>
-          </form>
+            {/* Защищенные маршруты */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/inventory" 
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <InventoryManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/warehouse" 
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <WarehouseInventory />
+                </ProtectedRoute>
+              } 
+            />
 
-          <Table dataSourse ={items} columns={columns} rowKey="id" pagination={false} bordered></Table>
-          <div className='complete'>
-            <Button type="primary" size="large" icon={<CheckCircleOutlined></CheckCircleOutlined>} onClick={() => message.success('Данные инвентаризации отправлены в БД')}>Завершить инвентаризацию ячейки</Button>
-          </div>
-        </Space>
-      </Card>
+            {/* Автоматическое перенаправление со всех неизвестных страниц и корня (/) */}
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+          </Routes>
+        </main>
 
-      <Dashboard></Dashboard>
-      <InventoryManagement></InventoryManagement>
+      </div>
+    </Router>
     </>
   )
 }
