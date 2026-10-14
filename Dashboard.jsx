@@ -86,7 +86,7 @@ export default function Dashboard() {
                     <Col xs={24} lg={16}>
                         <Card title="Объем складских операций" bordered={false}>
                             <div className='operac'>
-                                <ResponsiveContainer>
+                                <ResponsiveContainer width="100%" height={300}>
                                     <BarChart data={activityData} margin={{top: 10, right: 10, left: -20, bottom: 0}}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                         <XAxis dataKey="name" />
@@ -102,7 +102,7 @@ export default function Dashboard() {
                     <Col xs={24} lg={8}>
                         <Card title="Динамика заполнения склада" bordered={false}>
                             <div className='dinam'>
-                                <ResponsiveContainer>
+                                <ResponsiveContainer width="100%" height={300}>
                                     <AreaChart data={occupancyHistory} margin={{top: 10, right: 10, left: -30, bottom: 0}}>
                                         <CartesianGrid strokeDasharray="3 3"/>
                                         <XAxis dataKey="date"/>
