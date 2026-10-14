@@ -1,0 +1,32 @@
+.inventory-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #f5f5f5;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+.card {
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+}
+
+.input{
+    width: 100%;
+    height: 50px;
+    font-size: 16px;
+}
+
+.actual{
+    font-size: 16px;
+}
+
+.complete {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
